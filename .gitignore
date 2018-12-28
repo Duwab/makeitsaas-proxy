@@ -1,5 +1,6 @@
 .env
 node_modules/
 config/reload/*
+!config/reload/.gitkeep
 config/routes/*
 !config/routes/example.yml

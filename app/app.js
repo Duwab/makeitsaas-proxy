@@ -57,7 +57,7 @@ function watchConfig() {
     if(err) {
       console.log('error watchConfig', err);
     } else {
-      items.map(item => reloadEnvironement(item));
+      items.map(item => item !== '.gitkeep' && reloadEnvironement(item));
     }
   });
 }
