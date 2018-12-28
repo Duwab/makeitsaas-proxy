@@ -1,0 +1,9 @@
+hosts:
+  - my-awesome-domain-name.com
+services:
+  - path: /path-to-service-1
+    host: localhost
+    port: 3000
+  - path: /path-to-service-2
+    host: localhost
+    port: 3001
