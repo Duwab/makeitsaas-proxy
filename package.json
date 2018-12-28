@@ -1,7 +1,7 @@
 {
   "name": "makeitsaas-proxy",
   "version": "1.0.0",
-  "description": "",
+  "description": "Simple proxy service with livereload",
   "main": "app/app.js",
   "scripts": {
     "start": "node app/app.js",
