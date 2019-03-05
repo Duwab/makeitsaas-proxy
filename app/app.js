@@ -7,12 +7,17 @@ var http = require('http'),
 
 var proxy = httpProxy.createProxyServer({});
 var MAIN_CONFIG = {};
+let standByCodes = {};
 
 var server = http.createServer(function(req, res) {
   let hostConfig = getHostConfig(req.headers.host);
 
   if(!hostConfig) {
     return sendDefaultResponse(res);
+  }
+
+  if(standByCodes[hostConfig.envCode]) {
+    return sendTemporaryUnavailableResponse(res);
   }
 
   let matchingService = hostConfig.services.filter(service => {
@@ -29,6 +34,7 @@ var server = http.createServer(function(req, res) {
   proxy.web(req, res, { target: `http://${matchingService.host}:${matchingService.port}` });
 });
 
+setInterval(watchStandby, 500);
 setInterval(watchConfig, 2000);
 
 console.log(`listening on port ${process.env.SERVER_PORT}`);
@@ -39,6 +45,12 @@ initConfig();
 function sendDefaultResponse(res) {
   res.writeHead(200, { 'Content-Type': 'text/plain' });
   res.write('Proxy operational');
+  res.end();
+}
+
+function sendTemporaryUnavailableResponse(res) {
+  res.writeHead(503, { 'Content-Type': 'text/plain' });
+  res.write('Pending operations');
   res.end();
 }
 
@@ -58,6 +70,22 @@ function watchConfig() {
       console.log('error watchConfig', err);
     } else {
       items.map(item => item !== '.gitkeep' && reloadEnvironement(item));
+    }
+  });
+}
+
+function watchStandby() {
+  fs.readdir(`./config/standby`, function(err, items) {
+    let newStandBys = {};
+    if(err) {
+      console.log('error watchConfig', err);
+    } else {
+      items.map(envCode => {
+        if(envCode !== '.gitkeep') {
+          newStandBys[envCode] = true;
+        }
+      });
+      standByCodes = newStandBys;
     }
   });
 }
