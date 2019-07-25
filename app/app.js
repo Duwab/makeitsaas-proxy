@@ -46,6 +46,16 @@ var server = http.createServer(function(req, res) {
   });
 });
 
+proxy.on('error', function (err, req, res) {
+  res.writeHead(500, {
+    'Content-Type': 'text/plain',
+    'Proxy-Status': 'Running'
+  });
+
+  res.end('Service unavailable');
+});
+
+
 setInterval(watchStandby, 500);
 setInterval(watchConfig, 2000);
 
