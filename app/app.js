@@ -31,7 +31,18 @@ var server = http.createServer(function(req, res) {
 
   console.log('matching service :', `<${hostConfig.envCode}>${matchingService.path}`);
   req.url = req.url.slice(matchingService.path.length);
-  proxy.web(req, res, { target: `http://${matchingService.host}:${matchingService.port}` });
+  let s = matchingService.secure ? 's':'';
+  let target = `http${s}://${matchingService.host}:${matchingService.port}${matchingService.outputBasePath || ''}`;
+  // if type web then index on 404 (si pas d'extension)
+  if(matchingService.behavior === 'web') {
+    req.url = formatWebServerUrl(req.url);
+  }
+  console.log(target);
+  console.log(req.url);
+  proxy.web(req, res, {
+    target,
+    changeOrigin: s === 's'
+  });
 });
 
 setInterval(watchStandby, 500);
@@ -120,4 +131,17 @@ function getHostConfig(host) {
 
 function isValidConfig(envConfig) {
   return envConfig.hosts && envConfig.hosts && envConfig.services && envConfig.services.length;
+}
+
+
+function formatWebServerUrl(url) {
+  // web server : if url is not a file, change to index.html
+  let rest = url.split(/(\?|#)/);
+  let base = rest.shift();
+  let isFilePattern = /\.[a-zA-Z0-9]{1,10}$/.test(base);
+  if(!isFilePattern) {
+    return '/index.html' + rest.join('');
+  } else {
+    return url;
+  }
 }
