@@ -6,11 +6,12 @@ var http = require('http'),
     httpProxy = require('http-proxy');
 
 var proxy = httpProxy.createProxyServer({});
-var MAIN_CONFIG = {};
+var ENVS_CONFIG = {};
+var VHOSTS_CONFIG = {};
 let standByCodes = {};
 
 var server = http.createServer(function(req, res) {
-  let hostConfig = getHostConfig(req.headers.host);
+  let hostConfig = getVHostConfig(req.headers.host);
 
   if(!hostConfig) {
     return sendDefaultResponse(res);
@@ -105,7 +106,7 @@ function reloadEnvironement(envCode) {
   let envConfig = YAML.load(`./config/routes/${envCode}.yml`);
   envConfig.envCode = envCode;
   if(isValidConfig(envConfig)) {
-    MAIN_CONFIG[envCode] = envConfig;
+    ENVS_CONFIG[envCode] = envConfig;
     console.log(envCode, envConfig);
   } else {
     console.log('invalid config for', envCode, envConfig);
@@ -113,16 +114,21 @@ function reloadEnvironement(envCode) {
   fs.unlink(`./config/reload/${envCode}`, () => {});
 }
 
-function getHostConfig(host) {
-  for(let envCode in MAIN_CONFIG) {
-    let envConfig = MAIN_CONFIG[envCode];
+function getVHostConfig(domain) {
+  for(let envCode in ENVS_CONFIG) {
+    let envConfig = ENVS_CONFIG[envCode];
     try {
       if(!isValidConfig(envConfig)) {
         return;
       }
-      if(envConfig.hosts.indexOf(host) !== -1) {
-        return envConfig;
+      for(let i = 0; i < envConfig.vhosts.length; i++) {
+        let vhostConfig = envConfig.vhosts[i];
+        if(vhostConfig.domains.indexOf(domain) !== -1) {
+          vhostConfig.envCode = envCode;
+          return vhostConfig;
+        }
       }
+
     } catch(e) {
       return console.log('invalid config for', envCode, envConfig);
     }
@@ -130,7 +136,22 @@ function getHostConfig(host) {
 }
 
 function isValidConfig(envConfig) {
-  return envConfig.hosts && envConfig.hosts && envConfig.services && envConfig.services.length;
+  try {
+    if(!envConfig.vhosts.length) {
+      return false;
+    }
+
+    for(let i = 0; i < envConfig.vhosts.length; i++) {
+      let vhost = envConfig.vhosts[i];
+      if(!vhost.domains.length || !vhost.services.length) {
+        return false;
+      }
+    }
+  } catch(e) {
+    return false;
+  }
+
+  return true;
 }
 
 

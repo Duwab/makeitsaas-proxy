@@ -1,9 +1,19 @@
-hosts:
-  - my-awesome-domain-name.com
-services:
-  - path: /path-to-service-1
-    host: localhost
-    port: 3000
-  - path: /path-to-service-2
-    host: localhost
-    port: 3001
+vhosts:
+  - domains:
+      - my-awesome-domain-name.com
+    services:
+      - path: /path-to-service-1
+        host: localhost
+        port: 3000
+      - path: /path-to-service-2
+        host: localhost
+        port: 3001
+  - domains:
+      - my-2nd-awesome-domain-name.com
+    services:
+      - path: /
+        host: s3.us-west-1.amazonaws.com
+        outputBasePath: /bucket/path
+        port: 443
+        secure: true
+        behavior: web
