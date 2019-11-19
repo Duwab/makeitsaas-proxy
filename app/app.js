@@ -116,8 +116,22 @@ function reloadEnvironement(envCode) {
   let envConfig = YAML.load(`./config/routes/${envCode}.yml`);
   envConfig.envCode = envCode;
   if(isValidConfig(envConfig)) {
+    envConfig.vhosts = envConfig.vhosts.map(vhost => {
+      vhost.services = vhost.services.sort((serviceA, serviceB) => {
+        if (serviceA.path.length > serviceB.path.length) {
+          return -1
+        } else if (serviceA.path.length < serviceB.path.length) {
+          return 1;
+        } else {
+          return 0;
+        }
+      });
+
+      return vhost;
+    });
     ENVS_CONFIG[envCode] = envConfig;
     console.log(envCode, envConfig);
+    envConfig.vhosts.map(vh => console.log(`${vh.domains[0]} => ${vh.services.map(s => s.path).join(', ')}`));
   } else {
     console.log('invalid config for', envCode, envConfig);
   }
